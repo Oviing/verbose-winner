@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String
+  createdAt            DateTime  @default(now())
+
+  plan                 String    @default("FREE") // FREE | STARTER | PRO
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripeCurrentPeriodEnd DateTime?
+
+  apiKeys              ApiKey[]
+}
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  key        String    @unique
+  label      String    @default("Default")
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  usageEvents UsageEvent[]
+}
+
+model UsageEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  url       String
+  success   Boolean  @default(true)
+
+  apiKeyId  String
+  apiKey    ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+}
